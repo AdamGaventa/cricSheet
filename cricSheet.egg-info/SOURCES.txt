@@ -1,0 +1,6 @@
+setup.py
+cricSheet.egg-info/PKG-INFO
+cricSheet.egg-info/SOURCES.txt
+cricSheet.egg-info/dependency_links.txt
+cricSheet.egg-info/not-zip-safe
+cricSheet.egg-info/top_level.txt
