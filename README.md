@@ -1,10 +1,12 @@
 # cricsheet
 
-Add a short description here!
+Package to processs cricsheet data files
 
 ## Description
 
-A longer description of your project goes here...
+Cricsheet provides ball-by-ball data for cricket matches in both yaml and (experimentally) csv format.
+csv format are easy to use for analysis, but don't contain as much information as the yamls.
+This package parses the yamls into a sqlite database, for easier analysis.
 
 ## Installation
 
