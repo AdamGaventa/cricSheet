@@ -32,7 +32,7 @@ class Match():
 
     def __init__(self, yaml_file):
         self.yaml_file = yaml_file
-        self.match_id = self.yaml_file.split("/")[-1].split(".")[0]
+        self.match_id = self.yaml_file.split("/")[-1].split("\\")[-1].split(".")[0]
         self.raw_data = None
         self.meta = None
         self.balldata = None
@@ -57,8 +57,8 @@ class Match():
         #self.balldata = parse_balldata(data)
     
     def parse_metadata(self, data):
-        # TODO: improvement
-        # subclass of main Match class: MetaData Class. Store as attributes of the class instead of dict
+        # TODO: subclass of main Match class: MetaData Class. Store as attributes of the class instead of dict
+        # TODO: list of required columns, read and add to dict in one go. likewise optional columns with None if not present
 
         meta = data['info']
         d_meta = dict()
@@ -67,12 +67,27 @@ class Match():
         d_meta['match_type'] = meta['match_type']
         d_meta['date_start'] = meta['dates'][0] # first entry in dates field - first day of match if Test, match date otherwise
         d_meta['gender'] = meta['gender']
-        d_meta['competition'] = meta['competition']
+
+        if 'competition' in meta:
+            d_meta['competition'] = meta['competition']
+        else:
+            d_meta['competition'] = None
+
         d_meta['venue'] = meta['venue']
-        d_meta['city'] = meta['city']
-        d_meta['overs'] = meta['overs']
+
+        if 'city' in meta:
+            d_meta['city'] = meta['city']
+        else:
+            d_meta['city'] = None
+
+        if 'overs' in meta:
+            d_meta['overs'] = meta['overs']
+        else:
+            d_meta['overs'] = None
+
         d_meta['team_a'], d_meta['team_b'] = meta['teams']
-        d_meta['toss_decision'], d_meta['toss_winner'] = meta['toss']
+        d_meta['toss_decision'] = meta['toss']['decision']
+        d_meta['toss_winner'] = meta['toss']['winner']
         
         if 'winner' in meta['outcome']:
             d_meta['outcome'] = 'won'
@@ -80,7 +95,10 @@ class Match():
             d_meta['outcome_by_type'], d_meta['outcome_by_value'] = next(iter(meta['outcome']['by'].items()))
         else:
             d_meta['outcome'] = meta['outcome']['result']
-       
+            d_meta['outcome_winner']= None
+            d_meta['outcome_by_type']= None
+            d_meta['outcome_by_value']= None
+
         # didn't parse: umpires, player of match, data_verison, created_date, revision_number
 
         return d_meta
