@@ -1,9 +1,22 @@
+# -*- coding: utf-8 -*-
+"""
+    Setup file for cricsheet.
+    Use setup.cfg to configure your project.
+
+    This file was generated with PyScaffold 3.3a1.
+    PyScaffold helps you to put up the scaffold of your new Python project.
+    Learn more under: https://pyscaffold.org/
+"""
+import sys
+from pkg_resources import VersionConflict, require
 from setuptools import setup
 
-setup(name='cricSheet',
-      version='0.1',
-      description='create db from cricsheet yamls',
-      url='https://github.com/AdamGaventa/cricSheet',
-      author='AdamGaveta',
-     # packages=['cricSheet'],
-      zip_safe=False)
+try:
+    require("setuptools>=38.3")
+except VersionConflict:
+    print("Error: version of setuptools is too old (<38.3)!")
+    sys.exit(1)
+
+
+if __name__ == "__main__":
+    setup(use_pyscaffold=True)
