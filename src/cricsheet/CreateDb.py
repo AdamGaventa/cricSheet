@@ -32,7 +32,7 @@ class MatchTable(Base):
 #%%
 
 
-engine = create_engine('sqlite:///Data/sqlite/cricsheet_v2.db', echo=False)
+engine = create_engine('sqlite:///Data/sqlite/cricsheet_v3.db', echo=False)
 Base.metadata.create_all(bind=engine)
 Session = sessionmaker(bind=engine)
 
@@ -80,7 +80,7 @@ for file in data_files:
 
 #%%
 
-#match = Match("C:/Users/Adam/Documents/PycharmProjects/cricSheet/Data/yaml/recently_played_7_male/1207788.yaml")
-#match.execute()
+match = Match("C:/Users/Adam/Documents/PycharmProjects/cricSheet/cricsheet/data/raw/yaml/recently_played_7_male/1207788.yaml")
+match.execute()
 
 #%%
