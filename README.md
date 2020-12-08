@@ -8,6 +8,15 @@ Cricsheet provides ball-by-ball data for cricket matches in both yaml and (exper
 csv format are easy to use for analysis, but don't contain as much information as the yamls.
 This package parses the yamls into a sqlite database, for easier analysis.
 
+08/12/2020
+XML parsing functionality added, adapted from https://github.com/oli5679/cricsheet-db.
+A few bugs fixed, e.g. dealing with England-Pakistan when match awarded to England rather than won.
+
+XML source data from https://github.com/cricsheet/cricsheet-xml.
+A few bugs in data fixed, such as 10-ball overs repeating delivery numbers.
+
+Output sqlite db from xml files is 270MB
+
 ## Installation
 
 In order to set up the necessary environment:
