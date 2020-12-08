@@ -134,41 +134,41 @@ class Match():
         return d_ball
 
 #=============================================================================
-# from https://github.com/aadiuppal/cricsheet_db/blob/master/yaml_read.py
-    def getBallDetails(self,myfile):
-        stream = file(myfile,'r')
-        balls_data = []
-        matchid = get_id(myfile)
-        data = yaml.load(stream)
-        #print data.keys()
-        for i in range(len(data['innings'])):
-            innings = data['innings'][i].keys()[0]
-            batting_team = data['innings'][i][innings]['team']
-            for j in range(len(data['innings'][i][innings]['deliveries'])):
-                ball_num = j+1
-                over,batsman,bowler,non_striker,runs_batsman,runs_extras,runs_total,wicket_player,wicket_kind,wicket_fielder = self.get_ball_data(data['innings'][i][innings]['deliveries'][j])
-                balls_data.append([matchid,innings,batting_team,ball_num,over,batsman,
-                    bowler,non_striker,runs_batsman,runs_extras,runs_total,wicket_player,wicket_kind,wicket_fielder])
-        #print data['innings'][0]['1st innings']['deliveries'][0]
-        #print data['innings'][0]['1st innings']['team']
-        return balls_data
+# # from https://github.com/aadiuppal/cricsheet_db/blob/master/yaml_read.py
+#     def getBallDetails(self,myfile):
+#         stream = file(myfile,'r')
+#         balls_data = []
+#         matchid = get_id(myfile)
+#         data = yaml.load(stream)
+#         #print data.keys()
+#         for i in range(len(data['innings'])):
+#             innings = data['innings'][i].keys()[0]
+#             batting_team = data['innings'][i][innings]['team']
+#             for j in range(len(data['innings'][i][innings]['deliveries'])):
+#                 ball_num = j+1
+#                 over,batsman,bowler,non_striker,runs_batsman,runs_extras,runs_total,wicket_player,wicket_kind,wicket_fielder = self.get_ball_data(data['innings'][i][innings]['deliveries'][j])
+#                 balls_data.append([matchid,innings,batting_team,ball_num,over,batsman,
+#                     bowler,non_striker,runs_batsman,runs_extras,runs_total,wicket_player,wicket_kind,wicket_fielder])
+#         #print data['innings'][0]['1st innings']['deliveries'][0]
+#         #print data['innings'][0]['1st innings']['team']
+#         return balls_data
 
-    def get_ball_data(self,dat):
-        over = dat.keys()[0]
-        batsman = dat[over]['batsman']
-        bowler = dat[over]['bowler']
-        non_striker = dat[over]['non_striker']
-        runs_batsman = dat[over]['runs']['batsman']
-        runs_extras = dat[over]['runs']['extras']
-        runs_total = dat[over]['runs']['total']
-        if 'wicket' in dat[over]:
-            wicket_player = dat[over]['wicket']['player_out']
-            wicket_kind = dat[over]['wicket']['kind']
-            if 'fielders' in dat[over]['wicket']:
-                wicket_fielder = dat[over]['wicket']['fielders'][0]
-            else:
-                wicket_fielder = None
-        else:
-            wicket_fielder,wicket_kind,wicket_player = None,None,None
-        return [over,batsman,bowler,non_striker,runs_batsman,runs_extras,runs_total,wicket_player,wicket_kind,wicket_fielder]
-#=============================================================================
+#     def get_ball_data(self,dat):
+#         over = dat.keys()[0]
+#         batsman = dat[over]['batsman']
+#         bowler = dat[over]['bowler']
+#         non_striker = dat[over]['non_striker']
+#         runs_batsman = dat[over]['runs']['batsman']
+#         runs_extras = dat[over]['runs']['extras']
+#         runs_total = dat[over]['runs']['total']
+#         if 'wicket' in dat[over]:
+#             wicket_player = dat[over]['wicket']['player_out']
+#             wicket_kind = dat[over]['wicket']['kind']
+#             if 'fielders' in dat[over]['wicket']:
+#                 wicket_fielder = dat[over]['wicket']['fielders'][0]
+#             else:
+#                 wicket_fielder = None
+#         else:
+#             wicket_fielder,wicket_kind,wicket_player = None,None,None
+#         return [over,batsman,bowler,non_striker,runs_batsman,runs_extras,runs_total,wicket_player,wicket_kind,wicket_fielder]
+# #=============================================================================
