@@ -3,7 +3,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
-from cricsheet.MatchClass import Match
+from cricsheet.io_yaml.MatchClass import Match
 import glob
 
 Base = declarative_base()
