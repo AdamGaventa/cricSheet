@@ -11,11 +11,11 @@ dependencies:
   - pandas
   - ipython
   - tqdm
-  - click
   - matplotlib
   - seaborn
   - statsmodels
   - scikit-learn
+  - spyder
   - sqlalchemy
   - sqlite
   - pyyaml
@@ -27,7 +27,6 @@ dependencies:
   - jupyterlab
   - pytest
   - pytest-cov
-  - tox
   - pre_commit
   - nbdime
   - nbstripout
