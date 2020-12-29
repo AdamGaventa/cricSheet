@@ -6,6 +6,7 @@ channels:
 dependencies:
   - python>=3.6
   - pip
+  - lxml
   - numpy
   - scipy
   - pandas
@@ -22,7 +23,8 @@ dependencies:
   - xmltodict
   - pip:
      # add here only pip-packages that are not available in conda/conda-forge! E.g.:
-     - optuna
+     - beautifulsoup4
+     - python-dateutil
   # for development only (could also be kept in a separate environment file)
   - jupyterlab
   - pytest
