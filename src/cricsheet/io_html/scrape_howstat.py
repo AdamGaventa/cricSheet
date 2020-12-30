@@ -6,6 +6,9 @@ import numpy as np
 from dateutil.parser import parse
 from bs4 import BeautifulSoup
 
+import logging
+logging.info('I told you so')
+
 
 def parse_match_info(soup):
     match_info_data = np.array([item.text.strip() for item in soup.find_all(class_="TextBlack8")])[:5]
