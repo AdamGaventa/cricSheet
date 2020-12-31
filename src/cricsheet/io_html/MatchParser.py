@@ -2,10 +2,13 @@ import re
 import pandas as pd
 import numpy as np
 from dateutil.parser import parse
+import logging
 from cricsheet.io_html.BaseParser import BaseParser
 
 # TODO: improve logging
 # TODO: improve error catching
+
+log = logging.getLogger(__name__)
 
 
 class MatchParser(BaseParser):
@@ -32,12 +35,14 @@ class MatchParser(BaseParser):
         :param soup: bs4 soup object of match page
         :return: d_match_info: a dict of match information including Match Date
         """
+        log.debug('Parsing Match Info Data')
         match_info_data = np.array([item.text.strip() for item in soup.find_all(class_="TextBlack8")])[:5]
+        log.debug('Parsing Match Info Category')
         match_info_category = np.array([item.text.strip() for item in soup.find_all(class_="TextBlackBold8")])[:5]
 
+        log.debug('Formatting Match Info')
         d_match_info = pd.DataFrame(match_info_data, match_info_category).T.to_dict(orient='records')[0]
-        d_match_info['Match Date:'] = parse(d_match_info['Match Date:']).date()
-        # print(d_match_info)
+        d_match_info['Match Date:'] = parse(d_match_info['Match Date:'], fuzzy=True).date()
 
         return d_match_info
 
@@ -131,7 +136,7 @@ class MatchParser(BaseParser):
             item_text = item.text.replace('\xa0', ' ').strip()
             if 'Innings' in item_text:
                 innings, df_scorecard = self.parse_single_scorecard(item)
-                print(f'Parsed scorecard for: {innings} innings')
+                logging.debug(f'Parsed scorecard for: {innings} innings')
 
                 l_innings.append(innings)
                 d_scorecards[innings] = df_scorecard
@@ -214,23 +219,37 @@ class MatchParser(BaseParser):
         for item in fow_sections:
             df_fow = self.parse_single_fall_of_wickets(item)
             l_fow.append(df_fow)
-            print('Parsed FoW')
+            logging.debug('Parsed FoW')
 
         # Convert list of FoW dfs to dict
         if len(l_fow) == len(l_innings):
-            print(f'There are {len(l_fow)} innings with fall of wicket data')
+            logging.debug(f'There are {len(l_fow)} innings with fall of wicket data')
             d_fow = {l_innings[i]: l_fow[i] for i in range(len(l_fow))}
 
             df = self.clean_fall_of_wickets(d_fow, self.match_info, l_innings)
 
             return df
         else:
-            print('Number of innings does not match number of fall of wickets') # TODO: raise error
+            logging.warning('Number of innings does not match number of fall of wickets')  # TODO: raise error
 
     def execute(self):
+        log.debug('Reading url')
         html_page = super().read_html()
+        log.debug('Creating a beautiful soup')
         self.soup = super().create_soup(html_page)
 
+        log.info(f'Parsing Match: {self.match_id}')
+
+        log.debug('Parsing Match Info...')
         self.match_info = self.parse_match_info(self.soup)
-        self.scorecards, l_innings = self.parse_all_scorecards(self.soup)  # l_innings required for FoW parsing, but not to keep as an attribute
-        self.fall_of_wickets = self.parse_all_fall_of_wickets(self.soup, l_innings)  # l_innings req., so always execute scorecard parsing first
+        log.debug('Parsing Match Info...Complete!')
+
+        log.debug('Parsing Scorecards...')
+        self.scorecards, l_innings = self.parse_all_scorecards(
+            self.soup)  # l_innings required for FoW parsing, but not to keep as an attribute
+        log.debug('Parsing Scorecards...Complete!')
+
+        log.debug('Parsing Fall of Wickets...')
+        self.fall_of_wickets = self.parse_all_fall_of_wickets(self.soup,
+                                                              l_innings)  # l_innings req., so always execute scorecard parsing first
+        log.debug('Parsing Fall of Wickets..Complete!.')

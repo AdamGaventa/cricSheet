@@ -1,6 +1,8 @@
 import urllib
 from bs4 import BeautifulSoup
+import logging
 
+log = logging.getLogger(__name__)
 
 class BaseParser:
 
@@ -19,23 +21,21 @@ class BaseParser:
         with urllib.request.urlopen(self.url) as url:
             try:
                 s = url.read()
-                print(f'read url: {self.url}')
+                log.debug(f'URL read successfully: {self.url}')
             except:
                 pass
-
         return s
 
     def create_soup(self, html):
         # create a bs4 soup from the html
 
         soup = BeautifulSoup(html, 'html.parser')
-        print('read soup')
 
         return soup
 
     def execute(self):
-        print('Reading html')
+        log.debug('Reading url')
         html_page = self.read_html()
 
-        print('Reading soup')
+        log.debug('Creating a beautiful soup')
         self.soup = self.create_soup(html_page)
