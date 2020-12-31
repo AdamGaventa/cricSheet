@@ -5,7 +5,6 @@ from dateutil.parser import parse
 import logging
 from cricsheet.io_html.BaseParser import BaseParser
 
-# TODO: improve logging
 # TODO: improve error catching
 
 log = logging.getLogger(__name__)
@@ -35,12 +34,12 @@ class MatchParser(BaseParser):
         :param soup: bs4 soup object of match page
         :return: d_match_info: a dict of match information including Match Date
         """
-        log.debug('Parsing Match Info Data')
+        log.debug('Parsing Match Info: data')
         match_info_data = np.array([item.text.strip() for item in soup.find_all(class_="TextBlack8")])[:5]
-        log.debug('Parsing Match Info Category')
+        log.debug('Parsing Match Info: category')
         match_info_category = np.array([item.text.strip() for item in soup.find_all(class_="TextBlackBold8")])[:5]
 
-        log.debug('Formatting Match Info')
+        log.debug('Parsing Match Info: formatting')
         d_match_info = pd.DataFrame(match_info_data, match_info_category).T.to_dict(orient='records')[0]
         d_match_info['Match Date:'] = parse(d_match_info['Match Date:'], fuzzy=True).date()
 
@@ -57,6 +56,7 @@ class MatchParser(BaseParser):
         :return: df_scorecard: pandas df, containing a scorecard of a single innings
         """
         # The first parent is the header row of the scorecard
+        log.debug('Parsing Scorecard: header row')
         l_headers = [x.text.replace('\xa0', ' ').strip() for x in innings_section.parent.find_all('td')]
 
         # We now want to loop through the siblings of the header row to get each batsman's scores (and append the batsman score row to the data list),
@@ -64,17 +64,20 @@ class MatchParser(BaseParser):
         next_node = innings_section.parent
         l_data = []
         while True:
+            log.debug('Parsing Scorecard: scorecard row')
             next_node = next_node.find_next_sibling()  # use find_next_sibling() instead of next_sibling to avoid line breaks
             row = [x.text.replace('\xa0', ' ').replace('\r', '').replace('\n', '').strip() for x in
                    next_node.find_all('td')]
 
             if 'Total' in row:
+                log.debug('Parsing Scorecard: total row')
                 l_data.append(row)
                 break
             else:
                 l_data.append(row)
 
         # Create output df from the list of data
+        log.debug('Parsing Scorecard: convert to dataframe')
         innings_name = l_headers.pop(0).split('Innings')[0].strip()
         l_headers.insert(0, 'Details')
         l_headers.insert(0, 'Player')
@@ -90,9 +93,11 @@ class MatchParser(BaseParser):
         :param d_match_info: dict, containing match information, in particular a MatchDate
         :return: df_clean_scorecards: pandas df, containing cleaned scorecards
         """
+        log.debug('Cleaning Scorecard')
         df = df_scorecard.copy()
         cols = list(df.columns)
 
+        log.debug('Cleaning Scorecard: adding metadata')
         # Rename index column and move to df column
         df.index = df.index.set_names(['ScorecardIdx'])
         df = df.reset_index()
@@ -103,12 +108,14 @@ class MatchParser(BaseParser):
         df['MatchInnings'] = match_innings
         df[['Team', 'TeamInnings']] = team_innings.rsplit(' ', 1)
 
+        log.debug('Cleaning Scorecard: converting datatypes')
         # Clean up data types
         df['MatchDate'] = df['MatchDate'].apply(pd.to_datetime, errors='coerce', yearfirst=True)
         df['% of Total'] = df['% of Total'].str.replace('%', '')
         cols_numeric = ['R', 'BF', '4s', '6s', 'SR', '% of Total']
         df[cols_numeric] = df[cols_numeric].apply(pd.to_numeric, errors='coerce')
 
+        log.debug('Cleaning Scorecard: calculating columns')
         df = df.fillna(0)
         # Sum BF, 4s, 6s, and place into the appropriate place in the Totals row
         aggs = {'BF': 'sum', '4s': 'sum', '6s': 'sum'}
@@ -142,14 +149,15 @@ class MatchParser(BaseParser):
             if 'Innings' in item_text:
                 match_innings += 1
                 team_innings, df_scorecard = self.parse_single_scorecard(item)
-                logging.debug(f'Parsed scorecard for: {team_innings} innings')
+                log.debug(f'Parsed scorecard for: {team_innings} innings')
 
                 df_scorecard_clean = self.clean_single_scorecard(df_scorecard, team_innings, match_innings, match_info)
-                logging.debug(f'Cleaned scorecard for: {team_innings} innings')
+                log.debug(f'Cleaned scorecard for: {team_innings} innings')
 
                 l_innings.append(team_innings)
                 d_scorecards[team_innings] = df_scorecard_clean
 
+        log.debug(f'Joining scorecards for: {self.match_id}')
         df_scorecards = pd.concat(d_scorecards, keys=l_innings).reset_index(drop=True)
 
         return df_scorecards, l_innings
@@ -162,11 +170,11 @@ class MatchParser(BaseParser):
         :param fow_section:  bs4 object, a td element containing the words "Fall of Wickets"
         :return: df_fow: pandas df, containing the fall of wickets for a single innings
         """
-
         table = fow_section.parent.find('table')  # Move up one level and select table
         td = table.find_all('td')  # get table data
         tab = []
 
+        log.debug('Parsing Fall of Wickets: adding rows')
         for x in td:
             d_row = {}
             row = x.text.strip().replace(u'\xa0', u' ')
@@ -191,9 +199,11 @@ class MatchParser(BaseParser):
         :return: df_clean_fow: pandas df, containing cleaned fall of wickets
         """
         # Combine scorecards dfs, add key column from the dict
+        log.debug('Cleaning Fall of Wickets')
         df = pd.concat(d_fow, keys=l_innings).reset_index()
 
         # Expand key column into Team, Innings columns. Add Date column. Add matchId column
+        log.debug('Cleaning Fall of Wickets: adding metadata')
         df['MatchId'] = self.match_id
         df['MatchDate'] = d_match_info['Match Date:']
         meta = df.level_0.str.rsplit(n=1, expand=True)
@@ -201,11 +211,13 @@ class MatchParser(BaseParser):
         df = df.drop(['level_0', 'level_1'], axis=1)
 
         # Clean up column names and order
+        log.debug('Cleaning Fall of Wickets: reordering columns')
         cols = list(df.columns)
         cols = cols[-4:] + cols[:-4]
         df = df[cols]
 
         # Clean up data types
+        log.debug('Cleaning Fall of Wickets: converting datatypes')
         df['MatchDate'] = df['MatchDate'].apply(pd.to_datetime, errors='coerce', yearfirst=True)
         cols_numeric = ['Wicket', 'Runs']
         df[cols_numeric] = df[cols_numeric].apply(pd.to_numeric, errors='coerce')
@@ -229,26 +241,27 @@ class MatchParser(BaseParser):
         for item in fow_sections:
             df_fow = self.parse_single_fall_of_wickets(item)
             l_fow.append(df_fow)
-            logging.debug('Parsed FoW')
+            log.debug('Parsed Fall of Wickets for single innings')
 
         # Convert list of FoW dfs to dict
         if len(l_fow) == len(l_innings):
-            logging.debug(f'There are {len(l_fow)} innings with fall of wicket data')
+            log.debug(f'There are {len(l_fow)} innings with fall of wicket data')
             d_fow = {l_innings[i]: l_fow[i] for i in range(len(l_fow))}
 
             df = self.clean_fall_of_wickets(d_fow, self.match_info, l_innings)
 
             return df
         else:
-            logging.warning('Number of innings does not match number of fall of wickets')  # TODO: raise error
+            log.warning('Number of innings does not match number of fall of wickets')  # TODO: raise error
 
     def execute(self):
+        log.info(f'Parsing Match: {self.match_id}')
+
         log.debug('Reading url')
         html_page = super().read_html()
         log.debug('Creating a beautiful soup')
         self.soup = super().create_soup(html_page)
 
-        log.info(f'Parsing Match: {self.match_id}')
 
         log.debug('Parsing Match Info...')
         self.match_info = self.parse_match_info(self.soup)
