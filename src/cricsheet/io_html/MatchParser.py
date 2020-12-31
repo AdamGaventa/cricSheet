@@ -25,6 +25,8 @@ class MatchParser(BaseParser):
         self.scorecards = None
         self.fall_of_wickets = None
 
+        self.d_scorecards = None
+
     def __str__(self):
         # Override str method to show that this is a Match class
         return f'Match Parser Class for match_id: {self.match_id}'
@@ -45,6 +47,7 @@ class MatchParser(BaseParser):
         d_match_info['Match Date:'] = parse(d_match_info['Match Date:'], fuzzy=True).date()
 
         return d_match_info
+
 
     def parse_single_scorecard(self, innings_section):
 
@@ -81,45 +84,48 @@ class MatchParser(BaseParser):
 
         return innings_name, df_scorecard
 
-    def clean_scorecards(self, d_scorecards, d_match_info, l_innings):
+    def clean_single_scorecard(self, df_scorecard, team_innings, match_innings, d_match_info):
         """
-        Method to convert the dictionary of scorecards into a pandas df, and clean by adding metadata, and adjusting d_types
+        Method to clean each scorecard by summing cols, and adjusting d_types, and renaming cols
 
         :param d_scorecards: dict, containing scorecards of multiple innings, with keys as elements of l_innings
         :param d_match_info: dict, containing match information, in particular a MatchDate
-        :param l_innings: list, containing the names of all innings present on the parsed webpage
         :return: df_clean_scorecards: pandas df, containing cleaned scorecards
         """
-        # Combine scorecards dfs, add key column from the dict
-        df = pd.concat(d_scorecards, keys=l_innings).reset_index()
+        df = df_scorecard.copy()
+        cols = list(df.columns)
 
-        # Expand key column into Team, Innings columns. Add Date column. Add MatchID column
+        # Rename index column and move to df column
+        df.index = df.index.set_names(['ScorecardIdx'])
+        df = df.reset_index()
+
+        # Add metadata columns
         df['MatchId'] = self.match_id
         df['MatchDate'] = d_match_info['Match Date:']
-        meta = df.level_0.str.rsplit(n=1, expand=True)
-        df[['Team', 'Innings']] = meta
-        df = df.drop(['level_0'], axis=1)
-
-        # Clean up column names and order
-        cols = list(df.columns)
-        cols = ['ScorecardIdx' if col == "level_1" else col for col in cols]
-        df.columns = cols
-        cols = cols[-4:] + cols[:-4]
-        df = df[cols]
+        df['MatchInnings'] = match_innings
+        df[['Team', 'TeamInnings']] = team_innings.rsplit(' ', 1)
 
         # Clean up data types
         df['MatchDate'] = df['MatchDate'].apply(pd.to_datetime, errors='coerce', yearfirst=True)
-
         df['% of Total'] = df['% of Total'].str.replace('%', '')
-        cols_numeric = ['ScorecardIdx', 'R', 'BF', '4s', '6s', 'SR', '% of Total']
+        cols_numeric = ['R', 'BF', '4s', '6s', 'SR', '% of Total']
         df[cols_numeric] = df[cols_numeric].apply(pd.to_numeric, errors='coerce')
-        df['% of Total'] = df['% of Total'] / 100
 
-        df_clean_scorecards = df.copy()
+        df = df.fillna(0)
+        # Sum BF, 4s, 6s, and place into the appropriate place in the Totals row
+        aggs = {'BF': 'sum', '4s': 'sum', '6s': 'sum'}
+        df.loc[df.Player == 'Total', df.columns.isin(['BF', '4s', '6s'])] = list(df.iloc[:-1, :].agg(aggs))
 
-        return df_clean_scorecards
+        # Calculate innings strike rate
+        df.loc[df.Player == 'Total', 'SR'] = df[df.Player == 'Total'].R / df[df.Player == 'Total'].BF * 100
 
-    def parse_all_scorecards(self, soup):
+        # Reorder columns
+        cols = ['MatchId', 'MatchDate', 'MatchInnings', 'ScorecardIdx', 'Team', 'TeamInnings'] + cols
+        df = df[cols]
+
+        return df
+
+    def parse_all_scorecards(self, soup, match_info):
         """
         Method to parse scorecards from a match url.
         Finds Innings sections, and parses the innings into a single df.
@@ -132,18 +138,24 @@ class MatchParser(BaseParser):
         # If the text contains the word 'Innings', the next section will be the innings scorecard: so parse it.
         d_scorecards = {}
         l_innings = []
+        match_innings = 0
         for item in soup.find_all(class_="TextBlackBold8"):
             item_text = item.text.replace('\xa0', ' ').strip()
             if 'Innings' in item_text:
-                innings, df_scorecard = self.parse_single_scorecard(item)
-                logging.debug(f'Parsed scorecard for: {innings} innings')
+                match_innings += 1
+                team_innings, df_scorecard = self.parse_single_scorecard(item)
+                logging.debug(f'Parsed scorecard for: {team_innings} innings')
 
-                l_innings.append(innings)
-                d_scorecards[innings] = df_scorecard
+                df_scorecard_clean = self.clean_single_scorecard(df_scorecard, team_innings, match_innings, match_info)
+                logging.debug(f'Cleaned scorecard for: {team_innings} innings')
 
-        df_scorecards = self.clean_scorecards(d_scorecards, self.match_info, l_innings)
+                l_innings.append(team_innings)
+                d_scorecards[team_innings] = df_scorecard_clean
 
-        return df_scorecards, l_innings
+        df_scorecards = pd.concat(d_scorecards, keys=l_innings).reset_index(drop=True)
+
+        return df_scorecards, l_innings, d_scorecards
+
 
     def parse_single_fall_of_wickets(self, fow_section):
         """
@@ -245,11 +257,9 @@ class MatchParser(BaseParser):
         log.debug('Parsing Match Info...Complete!')
 
         log.debug('Parsing Scorecards...')
-        self.scorecards, l_innings = self.parse_all_scorecards(
-            self.soup)  # l_innings required for FoW parsing, but not to keep as an attribute
+        self.scorecards, l_innings, self.d_scorecards = self.parse_all_scorecards(self.soup, self.match_info)  # l_innings required for FoW parsing, but not to keep as an attribute
         log.debug('Parsing Scorecards...Complete!')
 
         log.debug('Parsing Fall of Wickets...')
-        self.fall_of_wickets = self.parse_all_fall_of_wickets(self.soup,
-                                                              l_innings)  # l_innings req., so always execute scorecard parsing first
+        self.fall_of_wickets = self.parse_all_fall_of_wickets(self.soup, l_innings)  # l_innings req., so always execute scorecard parsing first
         log.debug('Parsing Fall of Wickets..Complete!.')
