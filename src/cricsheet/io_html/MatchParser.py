@@ -25,8 +25,6 @@ class MatchParser(BaseParser):
         self.scorecards = None
         self.fall_of_wickets = None
 
-        self.d_scorecards = None
-
     def __str__(self):
         # Override str method to show that this is a Match class
         return f'Match Parser Class for match_id: {self.match_id}'
@@ -154,7 +152,7 @@ class MatchParser(BaseParser):
 
         df_scorecards = pd.concat(d_scorecards, keys=l_innings).reset_index(drop=True)
 
-        return df_scorecards, l_innings, d_scorecards
+        return df_scorecards, l_innings
 
 
     def parse_single_fall_of_wickets(self, fow_section):
@@ -257,7 +255,7 @@ class MatchParser(BaseParser):
         log.debug('Parsing Match Info...Complete!')
 
         log.debug('Parsing Scorecards...')
-        self.scorecards, l_innings, self.d_scorecards = self.parse_all_scorecards(self.soup, self.match_info)  # l_innings required for FoW parsing, but not to keep as an attribute
+        self.scorecards, l_innings = self.parse_all_scorecards(self.soup, self.match_info)  # l_innings required for FoW parsing, but not to keep as an attribute
         log.debug('Parsing Scorecards...Complete!')
 
         log.debug('Parsing Fall of Wickets...')
