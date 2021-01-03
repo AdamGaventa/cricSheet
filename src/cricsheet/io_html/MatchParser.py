@@ -6,6 +6,7 @@ import logging
 from cricsheet.io_html.BaseParser import BaseParser
 
 # TODO: improve error catching
+# TODO: ODI, T20 match type; url as property
 
 log = logging.getLogger(__name__)
 
