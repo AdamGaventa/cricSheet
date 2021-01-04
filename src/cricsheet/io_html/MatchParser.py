@@ -199,12 +199,7 @@ class MatchParser(BaseParser):
         :param l_innings: list, containing the names of all innings present on the parsed webpage
         :return: df_clean_fow: pandas df, containing cleaned fall of wickets
         """
-        #cols = list(df.columns)
-        # Combine scorecards dfs, add key column from the dict
-        #log.debug('Cleaning Fall of Wickets')
-        #log.info(df_fow.columns)
         df = df_fow.reset_index(drop=True)
-        #print(df.columns)
 
         # Expand key column into Team, Innings columns. Add Date column. Add matchId column
         log.debug('Cleaning Fall of Wickets: adding metadata')
@@ -215,12 +210,8 @@ class MatchParser(BaseParser):
 
         # Clean up column names and order
         log.debug('Cleaning Fall of Wickets: reordering columns')
-        #cols = list(df.columns)
-        #cols = cols[-4:] + cols[:-4]
-        #df = df[cols]
 
         # Clean up data types
-        #print(df.columns)
         log.debug('Cleaning Fall of Wickets: converting datatypes')
         df['MatchDate'] = df['MatchDate'].apply(pd.to_datetime, errors='coerce', yearfirst=True)
         cols_numeric = ['Wicket', 'Runs']
@@ -228,7 +219,6 @@ class MatchParser(BaseParser):
 
         cols = ['MatchId', 'MatchDate', 'MatchInnings', 'Team', 'TeamInnings', 'Wicket', 'Runs', 'Player']
         df_clean_fow = df.copy()[cols]
-        #df_clean_fow = df.copy()
 
         return df_clean_fow
 
@@ -263,7 +253,6 @@ class MatchParser(BaseParser):
 
         # Convert list of FoW dfs to dict
         log.debug(f'There are {len(l_fow)} innings with fall of wicket data')
-        #d_fow = {l_innings[i]: l_fow[i] for i in range(len(l_fow))}
         log.debug(f'Joining Fall of Wickets for: {self.match_id}')
         df = pd.concat(l_fow).reset_index(drop=True)
 
