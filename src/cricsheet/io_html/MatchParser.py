@@ -150,10 +150,10 @@ class MatchParser(BaseParser):
             if 'Innings' in item_text:
                 match_innings += 1
                 team_innings, df_scorecard = self.parse_single_scorecard(item)
-                log.debug(f'Parsed scorecard for: {team_innings} innings')
+                log.debug(f'Parsed scorecard for: innings {match_innings}')
 
                 df_scorecard_clean = self.clean_single_scorecard(df_scorecard, team_innings, match_innings, match_info)
-                log.debug(f'Cleaned scorecard for: {team_innings} innings')
+                log.debug(f'Cleaned scorecard for: innings {match_innings}')
 
                 l_innings.append(team_innings)
                 d_scorecards[team_innings] = df_scorecard_clean
@@ -190,7 +190,7 @@ class MatchParser(BaseParser):
 
         return df_fow
 
-    def clean_fall_of_wickets(self, d_fow, d_match_info, l_innings):
+    def clean_single_fall_of_wickets(self, df_fow, team_innings, match_innings, d_match_info):
         """
         Method to convert the dictionary of fall of wickets into a pandas df, and clean by adding metadata, and adjusting d_types
 
@@ -199,31 +199,36 @@ class MatchParser(BaseParser):
         :param l_innings: list, containing the names of all innings present on the parsed webpage
         :return: df_clean_fow: pandas df, containing cleaned fall of wickets
         """
+        #cols = list(df.columns)
         # Combine scorecards dfs, add key column from the dict
-        log.debug('Cleaning Fall of Wickets')
-        df = pd.concat(d_fow, keys=l_innings).reset_index()
+        #log.debug('Cleaning Fall of Wickets')
+        #log.info(df_fow.columns)
+        df = df_fow.reset_index(drop=True)
+        #print(df.columns)
 
         # Expand key column into Team, Innings columns. Add Date column. Add matchId column
         log.debug('Cleaning Fall of Wickets: adding metadata')
         df['MatchId'] = self.match_id
         df['MatchDate'] = d_match_info['Match Date:']
-        meta = df.level_0.str.rsplit(n=1, expand=True)
-        df[['Team', 'Innings']] = meta
-        df = df.drop(['level_0', 'level_1'], axis=1)
+        df['MatchInnings'] = match_innings
+        df[['Team', 'TeamInnings']] = team_innings.rsplit(' ', 1)
 
         # Clean up column names and order
         log.debug('Cleaning Fall of Wickets: reordering columns')
-        cols = list(df.columns)
-        cols = cols[-4:] + cols[:-4]
-        df = df[cols]
+        #cols = list(df.columns)
+        #cols = cols[-4:] + cols[:-4]
+        #df = df[cols]
 
         # Clean up data types
+        #print(df.columns)
         log.debug('Cleaning Fall of Wickets: converting datatypes')
         df['MatchDate'] = df['MatchDate'].apply(pd.to_datetime, errors='coerce', yearfirst=True)
         cols_numeric = ['Wicket', 'Runs']
         df[cols_numeric] = df[cols_numeric].apply(pd.to_numeric, errors='coerce')
 
-        df_clean_fow = df.copy()
+        cols = ['MatchId', 'MatchDate', 'MatchInnings', 'Team', 'TeamInnings', 'Wicket', 'Runs', 'Player']
+        df_clean_fow = df.copy()[cols]
+        #df_clean_fow = df.copy()
 
         return df_clean_fow
 
@@ -237,23 +242,32 @@ class MatchParser(BaseParser):
         # Loop through each Fall of Wickets section, and parse the FoW record.
         # Store in a dict with keys as innings names from parsed scorecard section.
         # This assumes there will always be a FoW for each scorecard
-        l_fow = []
         fow_sections = soup.findAll("td", text=re.compile('Fall of Wickets'))
+        l_fow = []
+        match_innings = 0
+        i = 0
         for item in fow_sections:
+            team_innings = l_innings[i]
+            match_innings += 1
             df_fow = self.parse_single_fall_of_wickets(item)
-            l_fow.append(df_fow)
-            log.debug('Parsed Fall of Wickets for single innings')
+            log.debug(f'Parsed Fall of Wickets for: innings {match_innings}')
+
+            if len(df_fow) > 0:
+                try:
+                    df_fow_clean = self.clean_single_fall_of_wickets(df_fow, team_innings, match_innings, self.match_info)
+                    log.debug(f'Cleaned Fall of Wickets for: innings {match_innings}')
+                    l_fow.append(df_fow_clean)
+                except Exception as err:
+                    log.warning(err)
+            i += 1
 
         # Convert list of FoW dfs to dict
-        if len(l_fow) == len(l_innings):
-            log.debug(f'There are {len(l_fow)} innings with fall of wicket data')
-            d_fow = {l_innings[i]: l_fow[i] for i in range(len(l_fow))}
+        log.debug(f'There are {len(l_fow)} innings with fall of wicket data')
+        #d_fow = {l_innings[i]: l_fow[i] for i in range(len(l_fow))}
+        log.debug(f'Joining Fall of Wickets for: {self.match_id}')
+        df = pd.concat(l_fow).reset_index(drop=True)
 
-            df = self.clean_fall_of_wickets(d_fow, self.match_info, l_innings)
-
-            return df
-        else:
-            log.warning('Number of innings does not match number of fall of wickets')  # TODO: raise error
+        return df
 
     def execute(self):
         log.info(f'Parsing Match: {self.match_id}')
