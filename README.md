@@ -1,6 +1,7 @@
 # cricsheet
 
-Package to processs cricsheet data files
+Originally: Package to processs cricsheet data files
+Now: Data Science Project repo for Cricket Analysis, including data ETL, and analysis.
 
 ## Description
 
@@ -20,6 +21,8 @@ Output sqlite db from xml files is 270MB
 03/01/2021
 Added Howstat scraping of scorecards and fall of wickets.
 Output of all Test Matches into csv is 26MB
+
+
 
 ## Installation
 
