@@ -9,12 +9,12 @@ def check_collapse_n_wickets(d_runs, n):
     The list contains Collapse namedtuple: start wicket, end wicket of collapse, number of runs, and positions involved.
     """
 
-    Collapse = namedtuple("Collapse", ["start", "end", "runs", "positions", "batters"])
+    Collapse = namedtuple("Collapse", ["start", "end", "runs", "wickets_lost", "batters"])
     n_collapses = 0
     l_collapses = []
 
     for i in range(n, len(d_runs)):
-        l_positions_involved = []
+        l_wickets_lost = []
         l_batters_involved = []
 
         # skip the case from 0 to i, since only i wickets will have fallen
@@ -26,9 +26,9 @@ def check_collapse_n_wickets(d_runs, n):
         diff = d_runs[i][0] - d_runs[i - n][0]
 
         if diff <= 30:
-            l_positions_involved = [s for s in range(i - n, i + 1)]
+            l_wickets_lost = [s for s in range(i - n, i + 1)]
             l_batters_involved = [d_runs[s][1] for s in range(i - n, i + 1)]
-            collapse = Collapse(start=i - n, end=i, runs=diff, positions=l_positions_involved,
+            collapse = Collapse(start=i - n, end=i, runs=diff, wickets_lost=l_wickets_lost,
                                 batters=l_batters_involved)
             l_collapses.append(collapse)
 
@@ -55,7 +55,7 @@ def check_all_collapses(d_runs):
     l_collapses_reduced = l_collapses[:]
     for m in l_collapses:
         for n in l_collapses:
-            if set(m.positions) <= set(n.positions) and m != n:
+            if set(m.wickets_lost) <= set(n.wickets_lost) and m != n:
                 # if is a sub-collapse, remove the smaller object from the list: we no longer need to test it
                 l_collapses_reduced.remove(m)
                 # and break, as
