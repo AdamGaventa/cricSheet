@@ -17,6 +17,10 @@ A few bugs in data fixed, such as 10-ball overs repeating delivery numbers.
 
 Output sqlite db from xml files is 270MB
 
+03/01/2021
+Added Howstat scraping of scorecards and fall of wickets.
+Output of all Test Matches into csv is 26MB
+
 ## Installation
 
 In order to set up the necessary environment:
