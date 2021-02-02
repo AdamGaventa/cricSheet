@@ -98,7 +98,7 @@ def main():
     log.info('Processing data')
     df_processed_fow = load_all_and_process()
 
-    log.info('Extracting collapses from fall of wickets data)
+    log.info('Extracting collapses from fall of wickets data')
     df_collapses = df.groupby(['MatchId', 'MatchInnings', 'Team']).apply(return_collapses).reset_index()
 
     log.info('Saving to file')
