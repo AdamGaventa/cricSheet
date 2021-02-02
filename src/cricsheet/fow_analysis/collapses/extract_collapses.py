@@ -1,5 +1,8 @@
 import pandas as pd
 from collections import namedtuple
+import logging
+
+log = logging.getLogger(__name__)
 
 
 def check_collapse_n_wickets(d_runs, n):

@@ -1,8 +1,17 @@
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 
+import difflib
+from functools import partial
+
+import logging
+
+log = logging.getLogger(__name__)
+
 def fuzzy_merge(df_1, df_2, key1, key2, threshold=90, limit=1):
     """
+    Using fuzzy wuzzy
+
     :param df_1: the left table to join
     :param df_2: the right table to join
     :param key1: key column of the left table
@@ -11,7 +20,6 @@ def fuzzy_merge(df_1, df_2, key1, key2, threshold=90, limit=1):
     :param limit: the amount of matches that will get returned, these are sorted high to low
     :return: dataframe with boths keys and matches
 
-    Credit to user on stackoverflow
     """
     s = df_2[key2].tolist()
 
@@ -22,3 +30,30 @@ def fuzzy_merge(df_1, df_2, key1, key2, threshold=90, limit=1):
     df_1['matches'] = m2
 
     return df_1
+
+
+def fuzzy_match(df1, df2, left_on, right_on):
+    """
+    using difflib
+
+    Args:
+        df1:
+        df2:
+        left_on:
+        right_on:
+
+    Returns:
+
+    """
+    f = partial(
+        difflib.get_close_matches, possibilities=df2[right_on].tolist(), n=2, cutoff=0.3)
+
+    matches = df1[left_on].map(f).str[0].fillna('')
+    scores = [
+        difflib.SequenceMatcher(None, x, y).ratio()
+        for x, y in zip(matches, df1[left_on])
+    ]
+
+    df_fuzzy_matched = df1.assign(best=matches, score=scores)
+
+    return df_fuzzy_matched
