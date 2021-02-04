@@ -28,11 +28,11 @@ class Pipeline(object):
 
     log.debug('Getting Fall of Wickets')
     all_fow = glob.glob(os.path.join(filepath_fow, "*.csv"))
-    l_fow_paths = all_fow[:100]
+    l_fow_paths = all_fow[:]
 
     log.debug('Getting scorecards')
     all_scores = glob.glob(os.path.join(filepath_scores, "*.csv"))
-    l_score_paths = all_scores[:100]
+    l_score_paths = all_scores[:]
 
     return l_fow_paths, l_score_paths
 
@@ -41,7 +41,7 @@ class Pipeline(object):
 
     l_innings = []
     for innings in df_fow.MatchInnings.unique():
-      log.debug('Joining scorecard to fow for innings: {innings}')
+      log.debug(f'Joining scorecard to fow for innings: {innings}')
 
       df_fow_innings = df_fow[df_fow.MatchInnings == innings]
       df_scores_innings = df_scores[df_scores.MatchInnings == innings]
@@ -79,6 +79,8 @@ class Pipeline(object):
     # for each fow file:
     for i in range(len(l_fow_paths)):
       # read fow, read scorecard
+      log.debug(f'Preprocess match: {l_fow_paths[i]}')
+
       log.debug('Reading fall of wickets')
       df_fow = pd.read_csv(l_fow_paths[i], index_col=0, parse_dates=[2], infer_datetime_format=True)
       log.debug('Reading scorecard')
