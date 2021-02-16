@@ -1,5 +1,8 @@
 import pandas as pd
 from collections import namedtuple
+import logging
+
+log = logging.getLogger(__name__)
 
 
 def check_collapse_n_wickets(d_runs, n):
@@ -9,13 +12,16 @@ def check_collapse_n_wickets(d_runs, n):
     The list contains Collapse namedtuple: start wicket, end wicket of collapse, number of runs, and positions involved.
     """
 
-    Collapse = namedtuple("Collapse", ["start", "end", "runs", "wickets_lost", "batters"])
+    Collapse = namedtuple("Collapse", ["start", "end", "runs", "wickets_lost", "batters", "batters_positon", "batters_runs", "batters_bf"])
     n_collapses = 0
     l_collapses = []
 
     for i in range(n, len(d_runs)):
         l_wickets_lost = []
         l_batters_involved = []
+        l_batters_position = []
+        l_batters_runs = []
+        l_batters_bf = []
 
         # skip the case from 0 to i, since only i wickets will have fallen
         if i == n:
@@ -28,8 +34,19 @@ def check_collapse_n_wickets(d_runs, n):
         if diff <= 30:
             l_wickets_lost = [s for s in range(i - n, i + 1)]
             l_batters_involved = [d_runs[s][1] for s in range(i - n, i + 1)]
-            collapse = Collapse(start=i - n, end=i, runs=diff, wickets_lost=l_wickets_lost,
-                                batters=l_batters_involved)
+            l_batters_position = [d_runs[s][2] for s in range(i-n,i+1)]
+            l_batters_runs = [d_runs[s][3] for s in range(i-n,i+1)]
+            l_batters_bf = [d_runs[s][4] for s in range(i-n,i+1)]
+
+            collapse = Collapse(start=i-n,
+                                end=i,
+                                runs=diff,
+                                wickets_lost=l_wickets_lost,
+                                batters=l_batters_involved,
+                                batters_positon=l_batters_position,
+                                batters_runs=l_batters_runs,
+                                batters_bf=l_batters_bf)
+
             l_collapses.append(collapse)
 
     return l_collapses
@@ -69,16 +86,21 @@ def return_collapses(df):
     """
     for each innings (group), want to return one row for each collapse,
     containing columns: start, end, runs, positions, (batters)
-
-    intended to be applied to a groupby of FoW, such that each innings is a unique group
     """
 
     l_runs = list(df.Runs)
     l_runs.insert(0, 0)
     l_player = list(df.Player)
     l_player.insert(0, "")
+    l_batting_position = list(df.BattingPosition)
+    l_batting_position.insert(0, "")
+    l_batter_runs = list(df.R)
+    l_batter_runs.insert(0, "")
+    l_batter_bf = list(df.BF)
+    l_batter_bf.insert(0, "")
 
-    d_runs = {i: (l_runs[i], l_player[i]) for i in range(len(l_runs))}
+    d_runs = {i: (l_runs[i], l_player[i], l_batting_position[i], l_batter_runs[i], l_batter_bf[i]) for i in
+              range(len(l_runs))}
 
     l_collapses = check_all_collapses(d_runs)
 

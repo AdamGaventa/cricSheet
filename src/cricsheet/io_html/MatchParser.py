@@ -179,7 +179,10 @@ class MatchParser(BaseParser):
         for x in td:
             d_row = {}
             row = x.text.strip().replace(u'\xa0', u' ')
-            row = row.split(' ')
+            log.debug(row)
+            row = row.split('  ') # split in double space, which separates the fall of wicket from the player name
+            log.debug(row)
+            log.debug(row[-1])
             score = row[0].split('-')
             d_row['Wicket'] = score[0]
             d_row['Runs'] = score[1]
