@@ -10,14 +10,14 @@ class WicketParser(Parser):
 
     def parse(self, raw):
         wicket = {
-            'match_id': self.match_id,
-            'innings_number': self.innings_number,
-            'over_number': self.over_number,
-            'ball_number': self.ball_number,
-            'kind': raw['kind'],
-            'player_out_name': raw['player_out'],
+            "match_id": self.match_id,
+            "innings_number": self.innings_number,
+            "over_number": self.over_number,
+            "ball_number": self.ball_number,
+            "kind": raw["kind"],
+            "player_out_name": raw["player_out"],
         }
-        if 'fielders' in raw:
+        if "fielders" in raw:
             ensure_list = lambda x: [x] if not isinstance(x, list) else x
-            wicket.update({'fielder_name': ensure_list(raw['fielders']['fielder'])[0]})
+            wicket.update({"fielder_name": ensure_list(raw["fielders"]["fielder"])[0]})
         return wicket

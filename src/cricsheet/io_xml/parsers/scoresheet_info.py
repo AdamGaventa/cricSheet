@@ -7,8 +7,8 @@ class ScoresheetInfoParser(Parser):
 
     def parse(self, raw):
         return {
-            'match_id': self.match_id,
-            'data_version': raw['data_version'],
-            'date_created': raw['created'],
-            'revision': raw['revision']
+            "match_id": self.match_id,
+            "data_version": raw["data_version"],
+            "date_created": raw["created"],
+            "revision": raw["revision"],
         }

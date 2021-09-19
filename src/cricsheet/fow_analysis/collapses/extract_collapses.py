@@ -12,7 +12,19 @@ def check_collapse_n_wickets(d_runs, n):
     The list contains Collapse namedtuple: start wicket, end wicket of collapse, number of runs, and positions involved.
     """
 
-    Collapse = namedtuple("Collapse", ["start", "end", "runs", "wickets_lost", "batters", "batters_positon", "batters_runs", "batters_bf"])
+    Collapse = namedtuple(
+        "Collapse",
+        [
+            "start",
+            "end",
+            "runs",
+            "wickets_lost",
+            "batters",
+            "batters_positon",
+            "batters_runs",
+            "batters_bf",
+        ],
+    )
     n_collapses = 0
     l_collapses = []
 
@@ -34,18 +46,20 @@ def check_collapse_n_wickets(d_runs, n):
         if diff <= 30:
             l_wickets_lost = [s for s in range(i - n, i + 1)]
             l_batters_involved = [d_runs[s][1] for s in range(i - n, i + 1)]
-            l_batters_position = [d_runs[s][2] for s in range(i-n,i+1)]
-            l_batters_runs = [d_runs[s][3] for s in range(i-n,i+1)]
-            l_batters_bf = [d_runs[s][4] for s in range(i-n,i+1)]
+            l_batters_position = [d_runs[s][2] for s in range(i - n, i + 1)]
+            l_batters_runs = [d_runs[s][3] for s in range(i - n, i + 1)]
+            l_batters_bf = [d_runs[s][4] for s in range(i - n, i + 1)]
 
-            collapse = Collapse(start=i-n,
-                                end=i,
-                                runs=diff,
-                                wickets_lost=l_wickets_lost,
-                                batters=l_batters_involved,
-                                batters_positon=l_batters_position,
-                                batters_runs=l_batters_runs,
-                                batters_bf=l_batters_bf)
+            collapse = Collapse(
+                start=i - n,
+                end=i,
+                runs=diff,
+                wickets_lost=l_wickets_lost,
+                batters=l_batters_involved,
+                batters_positon=l_batters_position,
+                batters_runs=l_batters_runs,
+                batters_bf=l_batters_bf,
+            )
 
             l_collapses.append(collapse)
 
@@ -99,8 +113,16 @@ def return_collapses(df):
     l_batter_bf = list(df.BF)
     l_batter_bf.insert(0, "")
 
-    d_runs = {i: (l_runs[i], l_player[i], l_batting_position[i], l_batter_runs[i], l_batter_bf[i]) for i in
-              range(len(l_runs))}
+    d_runs = {
+        i: (
+            l_runs[i],
+            l_player[i],
+            l_batting_position[i],
+            l_batter_runs[i],
+            l_batter_bf[i],
+        )
+        for i in range(len(l_runs))
+    }
 
     l_collapses = check_all_collapses(d_runs)
 
